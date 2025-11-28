@@ -1,0 +1,304 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "Mythical Hubs ",
+    LoadingTitle = "Myth Mags byy Backyardigans Hub",
+    LoadingSubtitle = "by MythOnCloud9",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "MagnetGUI",
+        FileName = "config"
+    },
+    KeySystem = false
+})
+
+-- Tabs
+local RCFA = Window:CreateTab("RCFA")
+local ROPREPS = Window:CreateTab("ROPREPS")
+local UNFL = Window:CreateTab("UNFL")
+local NHSA = Window:CreateTab("NHSA")
+local Settings = Window:CreateTab("Settings")
+
+-- Variables
+local magnetEnabled = false
+local magnetRange = 0
+local autoUnstunEnabled = false
+local manualCatchEnabled = false
+local boxSize = 0
+local magnetBox = nil
+
+-- Function to create the magnet box
+local function updateMagnetBox()
+    if magnetBox then
+        magnetBox:Destroy()
+    end
+
+    if magnetEnabled then
+        magnetBox = Instance.new("Part")
+        magnetBox.Size = Vector3.new(boxSize, boxSize, boxSize)
+        magnetBox.Anchored = true
+        magnetBox.CanCollide = false
+        magnetBox.Transparency = 0.5
+        magnetBox.Color = Color3.new(1, 0, 0)
+        magnetBox.Parent = game.Workspace
+
+        -- Update the box position to follow the player
+        game:GetService("RunService").RenderStepped:Connect(function()
+            if magnetBox and game.Players.LocalPlayer.Character then
+                local character = game.Players.LocalPlayer.Character
+                local root = character:FindFirstChild("HumanoidRootPart")
+                if root then
+                    magnetBox.Position = root.Position
+                end
+            end
+        end)
+    end
+end
+
+-- Auto Unstun Function
+local function autoUnstun()
+    while autoUnstunEnabled do
+        local character = game.Players.LocalPlayer.Character
+        if character and character:FindFirstChild("Humanoid") then
+            character.Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+        end
+        task.wait(0.1)
+    end
+end
+
+-- Manual Catch Function
+local function manualCatch()
+    local ball = workspace:FindFirstChild("Football") -- Change "Football" to your game's ball name
+    if ball and magnetEnabled and manualCatchEnabled then
+        local playerRoot = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if playerRoot then
+            ball.Position = playerRoot.Position
+        end
+    end
+end
+
+-- Magnet Controls for each tab
+local function createMagnetControls(tab)
+    tab:CreateToggle({
+        Name = "Magnets On/Off",
+        CurrentValue = false,
+        Flag = "MagnetToggle",
+        Callback = function(value)
+            magnetEnabled = value
+            updateMagnetBox()
+        end
+    })
+
+    tab:CreateSlider({
+        Name = "Magnet Range",
+        Range = {0, 70},
+        Increment = 1,
+        Suffix = "Studs",
+        CurrentValue = 0,
+        Flag = "MagnetRange",
+        Callback = function(value)
+            magnetRange = value
+            updateMagnetBox()
+        end
+    })
+
+    tab:CreateToggle({
+        Name = "Auto Unstun On/Off",
+        CurrentValue = false,
+        Flag = "AutoUnstun",
+        Callback = function(value)
+            autoUnstunEnabled = value
+            if value then
+                task.spawn(autoUnstun)
+            end
+        end
+    })
+
+    tab:CreateSlider({
+        Name = "Jump Power",
+        Range = {0, 120},
+        Increment = 1,
+        Suffix = "Power",
+        CurrentValue = 50,
+        Flag = "JumpPower",
+        Callback = function(value)
+            game.Players.LocalPlayer.Character.Humanoid.JumpPower = value
+        end
+    })
+
+    tab:CreateSlider({
+        Name = "Speed Power",
+        Range = {0, 90},
+        Increment = 1,
+        Suffix = "Speed",
+        CurrentValue = 16,
+        Flag = "SpeedPower",
+        Callback = function(value)
+            game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = value
+        end
+    })
+
+    tab:CreateToggle({
+        Name = "Manual Catch (Click to Catch)",
+        CurrentValue = false,
+        Flag = "ManualCatch",
+        Callback = function(value)
+            manualCatchEnabled = value
+        end
+    })
+
+    tab:CreateSlider({
+        Name = "Magnet Box Size",
+        Range = {0, 80},
+        Increment = 1,
+        Suffix = "Studs",
+        CurrentValue = 0,
+        Flag = "BoxSize",
+        Callback = function(value)
+            boxSize = value
+            updateMagnetBox()
+        end
+    })
+end
+
+-- Add controls to each tab
+for _, tab in pairs({RCFA, ROPREPS, UNFL, NHSA}) do
+    createMagnetControls(tab)
+end
+
+-- Settings Tab
+Settings:CreateSlider({
+    Name = "Time Control",
+    Range = {0, 12},
+    Increment = 1,
+    Suffix = "Hours",
+    CurrentValue = 0,
+    Flag = "TimeControl",
+    Callback = function(value)
+        game.Lighting.ClockTime = value
+    end
+})
+
+Settings:CreateButton({
+    Name = "Infinite Yield (Admin Panel)",
+    Callback = function()
+        loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))()
+    end
+})
+
+-- Detect Player Click for Manual Catch
+game:GetService("UserInputService").InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        manualCatch()
+    end
+end)
+
+-- 🧠 RCFA QB AIMBOT
+
+local aimbotEnabled = false
+local aimbotLines = {}
+local camera = workspace.CurrentCamera
+local LocalPlayer = game.Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+-- Create beam line
+local function createAimbotLine(target)
+    if not target or not target:FindFirstChild("HumanoidRootPart") then return end
+
+    local startAtt = Instance.new("Attachment")
+    local endAtt = Instance.new("Attachment")
+    local beam = Instance.new("Beam")
+
+    beam.Attachment0 = startAtt
+    beam.Attachment1 = endAtt
+    beam.Color = ColorSequence.new(Color3.fromRGB(85, 255, 127))
+    beam.Width0 = 0.2
+    beam.Width1 = 0.2
+    beam.Transparency = NumberSequence.new(0.2)
+    beam.FaceCamera = true
+    beam.Parent = camera
+
+    startAtt.Parent = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    endAtt.Parent = target:FindFirstChild("HumanoidRootPart")
+
+    return {beam = beam, att0 = startAtt, att1 = endAtt, target = target}
+end
+
+-- Get valid teammates in RCFA
+local function getTeammates()
+    local list = {}
+    for _, plr in ipairs(game.Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Team == LocalPlayer.Team and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+            table.insert(list, plr.Character)
+        end
+    end
+    return list
+end
+
+-- Closest teammate finder
+local function getClosestTeammate()
+    local closest, minDist = nil, math.huge
+    for _, char in ipairs(getTeammates()) do
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            local dist = (camera.CFrame.Position - hrp.Position).Magnitude
+            if dist < minDist then
+                minDist = dist
+                closest = char
+            end
+        end
+    end
+    return closest
+end
+
+-- Update beam positions
+local function updateLines()
+    for i, data in ipairs(aimbotLines) do
+        if data.target and data.target:FindFirstChild("HumanoidRootPart") then
+            data.att1.WorldPosition = data.target.HumanoidRootPart.Position
+        end
+    end
+end
+
+-- Toggle visibility
+local function toggleAimbot(state)
+    aimbotEnabled = state
+    if state then
+        -- Add new teammate lines
+        for _, char in ipairs(getTeammates()) do
+            local beamLine = createAimbotLine(char)
+            if beamLine then table.insert(aimbotLines, beamLine) end
+        end
+        RunService:BindToRenderStep("RCFAAimbot", Enum.RenderPriority.Camera.Value + 1, updateLines)
+    else
+        -- Clear lines
+        for _, line in ipairs(aimbotLines) do
+            if line.beam then line.beam:Destroy() end
+            if line.att0 then line.att0:Destroy() end
+            if line.att1 then line.att1:Destroy() end
+        end
+        aimbotLines = {}
+        RunService:UnbindFromRenderStep("RCFAAimbot")
+    end
+end
+
+-- Rayfield toggle inside RCFA tab
+RCFA:CreateToggle({
+    Name = "QB Aimbot (Show Lines to Teammates)",
+    CurrentValue = false,
+    Flag = "RCFAAimbot",
+    Callback = function(state)
+        toggleAimbot(state)
+    end
+})
+
+-- Snap camera to closest teammate when pressing Q
+UserInputService.InputBegan:Connect(function(input, processed)
+    if not processed and input.KeyCode == Enum.KeyCode.Q and aimbotEnabled then
+        local target = getClosestTeammate()
+        if target and target:FindFirstChild("HumanoidRootPart") then
+            camera.CFrame = CFrame.new(camera.CFrame.Position, target.HumanoidRootPart.Position)
+        end
+    end
+end)
